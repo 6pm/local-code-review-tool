@@ -1,113 +1,69 @@
 # Code Review Tool
 
-A tool for automated code reviews using LLM models through Ollama.
+A tool for automated code reviews using local LLM models through Ollama. It fetches pull requests and performs code reviews file by file. You can customize the review process by modifying the guidelines in "guidelines/review-guidelines.md". The tool supports multiple models, allowing you to compare their review results.
+Review results will be saved in files named "temp/review-{MODEL_NAME}.txt".
 
 ## Features
 
-- Fetches pull request diffs from Bitbucket
-- Performs automated code reviews using LLM models
-- Saves review results to a file
--  Context length can be extended using MAX_CONTEXT_LENGTH env variable (default 20K)
+- Fetches pull request diffs from Bitbucket and reviews files individually
+- Performs automated code reviews using local LLM models
+- Customizable review guidelines stored in "guidelines/review-guidelines.md"
+- Saves review results to separate files for each model
+- Configurable context length using MAX_CONTEXT_LENGTH environment variable (default: 20K tokens)
 
 ## Prerequisites
 
-- Docker and Docker Compose
+- [Ollama](https://ollama.com/)
+- Node.js
 
-## Running with Docker
+### Step 1: Setup Ollama
+1. Install [Ollama](https://ollama.com/)
 
-This project is fully containerized and can be run with a single command using Docker Compose.
-
-### Setup
-
-1. Create a `.env` file in the project root with the following variables:
-
+2. Download the model you want to use, for example 'qwen2.5-coder':
+```sh
+ollama pull qwen2.5-coder:7b
 ```
-MODEL_NAME='qwen2.5-coder:7b'  # Single model
-# or multiple models (comma-separated):
+The download might take a few minutes depending on the model size. Once completed, add the environment variable to the .env file in the root folder:
+
+For a single model:
+```sh
+MODEL_NAME='qwen2.5-coder:7b'
+```
+
+For multiple models (comma-separated):
+```sh
 MODEL_NAME='qwen2.5-coder:14b,codellama:13b,mixtral:8x7b'
-PULL_REQUEST_URL='https://bitbucket.org/your-repo/pull-requests/123/diff'
+```
+
+### Step 2: Configure Bitbucket Access
+Follow the instructions in the [Bitbucket setup guide](/docs/configure-bitbucket.md).
+After setup, add these variables to your .env file:
+```sh
 BITBUCKET_USERNAME='your-username'
 BITBUCKET_APP_PASSWORD='your-app-password'
-MAX_CONTEXT_LENGTH = 32768, // context length to 32K tokens. 20k by default
 ```
 
-2. Run the application:
+### Step 3: Configure Pull Request and Optional Parameters
+Add your Bitbucket pull request URL to the environment variables:
+```sh
+PULL_REQUEST_URL='https://bitbucket.org/your-repo/pull-requests/123/diff'
+```
+
+The context length is an optional parameter. The default value is 20K tokens. You can extend it by setting the environment variable:
+```sh
+MAX_CONTEXT_LENGTH=32768
+```
+
+### Step 4: Customize Review Guidelines
+Modify the guidelines file to match your project's requirements: [guidelines/review-guidelines.md](guidelines/review-guidelines.md)
+
+## Running the Application
 
 ```bash
-docker-compose up
+pnpm i    # Install dependencies
+pnpm start # Start the review process
 ```
-
-This will:
-- Build the application container
-- Start the Ollama service
-- Download the specified LLM model (if not already downloaded)
-- Run the code review process
-
-The first run may take some time as it needs to download the LLM model.
-
-### Ollama and Model Storage
-
-In the Docker setup:
-- Ollama is installed as a containerized service using the official `ollama/ollama:latest` image
-- The downloaded models are stored in a Docker volume named `ollama-data` which is mounted to `/root/.ollama` inside the container
-- This ensures that models persist between container restarts and don't need to be re-downloaded each time
-- You can see the downloaded models by running `docker exec -it code-review-ollama-1 ollama list`
 
 ### Output
 
-The review results will be saved in the `temp/review.txt` file.
-
-## Running Locally (without Docker)
-
-If you prefer to run the application locally:
-
-1. Install dependencies:
-
-```bash
-pnpm install
-```
-
-2. Create a `.env` file as described above, and add:
-
-```
-OLLAMA_HOST=localhost
-```
-
-3. Make sure Ollama is installed and running locally.
-
-4. Run the application:
-
-```bash
-pnpm run
-```
-
-## Available Scripts
-
-- `pnpm guidelines` - Read guidelines
-- `pnpm get-diff` - Get diff from Bitbucket
-- `pnpm review-diff` - Review the PR diff
-- `pnpm run` - Run the complete workflow (get diff and review)
-
-## Docker Commands
-
-### Using npm/pnpm scripts
-
-- Start the application: `pnpm docker`
-- Rebuild and start the application: `pnpm docker:build`
-- Stop the application: `pnpm docker:down`
-
-### Using Docker Compose directly
-
-- Start the application: `docker-compose up`
-- Rebuild the application: `docker-compose up --build`
-- Run in background: `docker-compose up -d`
-- Stop the application: `docker-compose down`
-- View logs: `docker-compose logs -f`
-
-### Managing Docker Volumes
-
-- List all volumes: `docker volume ls`
-- Inspect the Ollama data volume: `docker volume inspect ollama-data`
-- Remove the volume (will delete all downloaded models): `docker volume rm ollama-data`
-
-Note: The Docker volume `ollama-data` persists even when containers are stopped or removed with `docker-compose down`. To completely remove the volume and all downloaded models, you need to explicitly remove it with `docker volume rm ollama-data`.
+The review results will be saved in separate files under the `temp` directory, with filenames following the pattern `review-${MODEL_NAME}.txt`.
