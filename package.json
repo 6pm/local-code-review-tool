@@ -8,9 +8,6 @@
     "get-diff": " pnpm dlx tsx src/scripts/get_diff_from_bitbucket.ts",
     "review-diff": " pnpm dlx tsx src/scripts/review-pr-diff.ts",
     "start": "pnpm get-diff && pnpm review-diff",
-    "docker": "docker-compose up",
-    "docker:build": "docker-compose up --build",
-    "docker:down": "docker-compose down",
     "test": "jest",
     "test:watch": "jest --watch"
   },
